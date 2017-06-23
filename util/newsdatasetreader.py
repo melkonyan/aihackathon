@@ -6,7 +6,8 @@ import nltk
 import numpy as np
 import kaggleProcessing
 
-def prepare_news_datasets(max_vocab_size, max_samples_num):
+def prepare_news_datasets(max_vocab_size, max_samples_num, max_seq_length):
+    news_datasets = ['news_data/kaggle.txt', 'news_data/signal.txt']
     if not os.path.exists("news_data/"):
         os.makedirs("news_data/")
     if not os.path.exists('news_data/signal.jsonl'):
@@ -30,13 +31,14 @@ def prepare_news_datasets(max_vocab_size, max_samples_num):
         print "vocab mapping found..."
     else:
         print "no vocab mapping found, running preprocessor..."
-        createVocab(['news_data/kaggle.txt', 'news_data/signal.txt'], max_vocab_size)
-    if not os.path.exists("news_data/news_vectors.pty"):
+        createVocab(news_datasets, max_vocab_size)
+    if not os.path.exists("news_data/news_vectors.npy"):
         print "No processed data file found, running preprocessor..."
     else:
         return
     import vocabmapping
-    convert_words_to_vec()
+    vocab = vocabmapping.VocabMapping()
+    convert_words_to_vec(news_datasets, vocab, max_seq_length, [False, True], 'news_data/news_vectors.npy')
 
 #method from:
 #http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
@@ -100,9 +102,9 @@ def createVocab(files, max_vocab_size):
         pickle.dump(d, handle)
 
 
-def convert_words_to_vec(fname, vocab_mapping, max_seq_length, is_fake, output_name):
+def convert_words_to_vec(fnames, vocab_mapping, max_seq_length, are_fakes, output_name):
    data = np.array([i for i in range(max_seq_length + 2)])
-   for fname in fnames:
+   for fname, is_fake in zip(fnames, are_fakes):
         with open(fname, 'r') as review:
             for l in review:
                 tokens = tokenize(l.lower())
@@ -130,10 +132,8 @@ def convert_words_to_vec(fname, vocab_mapping, max_seq_length, is_fake, output_n
 Saves processed data numpy array
 '''
 def saveData(npArray, fname):
-    name = "{}.npy".format(fname)
-    outfile = os.path.join("news_data/", name)
     print "numpy array is: {0}x{1}".format(len(npArray), len(npArray[0]))
-    np.save(outfile, npArray)
+    np.save(fname, npArray)
 
 if __name__ == '__main__':
-    prepare_news_datasets(100, 50000)
+    prepare_news_datasets(100, 50000, 500)

@@ -1,7 +1,7 @@
 import csv
 import sys
 
-filename = 'news_data/fake.csv'
+filename = 'data/fake.csv'
 
 TITLE = 4
 TEXT = 5
