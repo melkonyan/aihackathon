@@ -4,12 +4,11 @@ import pickle
 import urllib2
 import nltk
 import numpy as np
+import kaggleProcessing
 
 def prepare_news_datasets(max_vocab_size, max_samples_num):
-    signal_news_file = 'signal.jsonl'
-    signal_contetnt_fiel = 'signal.txt'
-    if not os.path.exists("new_data/"):
-        os.makedirs("new_data/")
+    if not os.path.exists("news_data/"):
+        os.makedirs("news_data/")
     if not os.path.exists('news_data/signal.jsonl'):
         #fname = 'signalmedia-1m.jsonl.gz'
         fname = downloadFile('http://research.signalmedia.co/newsir16/signalmedia-1m.jsonl.gz')
@@ -17,7 +16,7 @@ def prepare_news_datasets(max_vocab_size, max_samples_num):
         import shutil
         with gzip.open(fname, 'rb') as f_in, open('news_data/signal.jsonl', 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    if not os.path.exists('news_data/signal.txt') or True:
+    if not os.path.exists('news_data/signal.txt'):
         with open('news_data/signal.jsonl', 'r') as fin, open('news_data/signal.txt', 'w') as fout:
             for i in range(max_samples_num):
                 sample = json.loads(fin.readline())
@@ -25,24 +24,24 @@ def prepare_news_datasets(max_vocab_size, max_samples_num):
                 content = sample['content'].replace('\n', '').encode('ascii',errors='ignore')
                 text =  title + '. ' + content
                 fout.write(text)
-    return
+    if not os.path.exists('news_data/kaggle.txt'):
+        kaggleProcessing.read_kaggle_dataset()
     if os.path.exists("news_data/vocab.txt"):
         print "vocab mapping found..."
     else:
         print "no vocab mapping found, running preprocessor..."
-        createVocab([], max_vocab_size)
-    if not os.path.exists("data/processed"):
-        os.makedirs("data/processed/")
+        createVocab(['news_data/kaggle.txt', 'news_data/signal.txt'], max_vocab_size)
+    if not os.path.exists("news_data/news_vectors.pty"):
         print "No processed data file found, running preprocessor..."
     else:
         return
     import vocabmapping
-
+    convert_words_to_vec()
 
 #method from:
 #http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
 def downloadFile(url):
-    file_name = os.path.join("data/", url.split('/')[-1])
+    file_name = os.path.join("news_data/", url.split('/')[-1])
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
@@ -74,7 +73,7 @@ def tokenize(text):
 '''
 create vocab mapping file
 '''
-def createVocab(files, max_vocab_size, max_samples_num):
+def createVocab(files, max_vocab_size):
     print "Creating vocab mapping..."
     dic = {}
     for f in files:
@@ -101,28 +100,30 @@ def createVocab(files, max_vocab_size, max_samples_num):
         pickle.dump(d, handle)
 
 
-def convert_words_to_vec(fname, vocab_mapping, max_seq_length, is_fake):
+def convert_words_to_vec(fname, vocab_mapping, max_seq_length, is_fake, output_name):
    data = np.array([i for i in range(max_seq_length + 2)])
-   with open(fname, 'r') as review:
-        tokens = tokenize(review.read().lower())
-        numTokens = len(tokens)
-        indices = [vocab_mapping.getIndex(j) for j in tokens]
-        #pad sequence to max length
-        if len(indices) < max_seq_length:
-            indices = indices + [vocab_mapping.getIndex("<PAD>") for i in range(max_seq_length - len(indices))]
-        else:
-            indices = indices[0:max_seq_length]
-        if  is_fake:
-            indices.append(1)
-        else:
-            indices.append(0)
-        indices.append(min(numTokens, max_seq_length))
-        assert len(indices) == max_seq_length + 2, str(len(indices))
-        data = np.vstack((data, indices))
+   for fname in fnames:
+        with open(fname, 'r') as review:
+            for l in review:
+                tokens = tokenize(l.lower())
+                numTokens = len(tokens)
+                indices = [vocab_mapping.getIndex(j) for j in tokens]
+                #pad sequence to max length
+                if len(indices) < max_seq_length:
+                    indices = indices + [vocab_mapping.getIndex("<PAD>") for i in range(max_seq_length - len(indices))]
+                else:
+                    indices = indices[0:max_seq_length]
+                if  is_fake:
+                    indices.append(1)
+                else:
+                    indices.append(0)
+                indices.append(min(numTokens, max_seq_length))
+                assert len(indices) == max_seq_length + 2, str(len(indices))
+                data = np.vstack((data, indices))
         indices = []
         #remove first placeholder value
         data = data[1::]
-        saveData(data)
+        saveData(data, output_name)
 
 
 '''
@@ -130,7 +131,7 @@ Saves processed data numpy array
 '''
 def saveData(npArray, fname):
     name = "{}.npy".format(fname)
-    outfile = os.path.join("data/processed/", name)
+    outfile = os.path.join("news_data/", name)
     print "numpy array is: {0}x{1}".format(len(npArray), len(npArray[0]))
     np.save(outfile, npArray)
 

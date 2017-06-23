@@ -1,21 +1,18 @@
 import csv
 import sys
 
-filename = '../data/fake.csv'
+filename = 'news_data/fake.csv'
 
 TITLE = 4
 TEXT = 5
 
 csv.field_size_limit(sys.maxsize)
 
-output = open("../data/kaggle.txt", "w", encoding='utf-8')
+def read_kaggle_dataset():
 
-with open(filename, 'r', encoding='utf-8') as f:
-    dic = {}
-    reader = csv.reader(f)
-    next(reader)
-    for row in reader:
-        output.write(row[TITLE] + " " + row[TEXT] + "\n")
-
-
-output.close()
+    with open(filename, 'r') as f, open("news_data/kaggle.txt", "w") as fout:
+        reader = csv.reader(f)
+        next(reader)
+        for row in reader:
+            sample = row[TITLE] + " " + row[TEXT] + "\n"
+            fout.write(sample)

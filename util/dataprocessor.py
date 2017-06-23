@@ -5,6 +5,7 @@ import csv
 import pickle
 import urllib2
 import numpy as np
+import ka
 from multiprocessing import Process, Lock
 dirs = ["data/aclImdb/test/pos", "data/aclImdb/test/neg", "data/aclImdb/train/pos", "data/aclImdb/train/neg"]
 url = "http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
