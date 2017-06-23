@@ -27,7 +27,7 @@ import util.vocabmapping
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string("config_file", "config.ini", "Path to configuration file with hyper-parameters.")
-flags.DEFINE_string("data_dir", "data/", "Path to main data directory.")
+flags.DEFINE_string("data_dir", "news_data/", "Path to main data directory.")
 flags.DEFINE_string("checkpoint_dir", "data/checkpoints/", "Directory to store/restore checkpoints")
 
 
@@ -44,7 +44,7 @@ def main():
     vocabmapping = util.vocabmapping.VocabMapping()
     vocab_size = vocabmapping.getSize()
     print "Vocab size is: {0}".format(vocab_size)
-    path = os.path.join(FLAGS.data_dir, "processed/")
+    path = FLAGS.data_dir
     infile = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     # randomize data order
     print infile
